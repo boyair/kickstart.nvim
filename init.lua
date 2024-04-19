@@ -44,7 +44,6 @@ What is Kickstart?
 Kickstart Guide:
 
   TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
     If you don't know what this means, type the following:
       - <escape key>
       - :
@@ -95,11 +94,31 @@ vim.g.maplocalleader = ' '
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
 
--- Make line numbers default
+-- Make relative line numbers default
 vim.opt.number = true
+vim.opt.relativenumber = true
 -- You can also add relative line numbers, for help with jumping.
 --  Experiment for yourself to see if you like it!
 -- vim.opt.relativenumber = true
+
+-- make tabs 2 spaces wide
+vim.opt.tabstop = 2
+vim.opt.softtabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.expandtab = true
+
+-- remap for using <space>p to paste over text without overriding clipboard buffer
+vim.keymap.set('x', '<leader>p', '"_dP')
+
+-- Map semicolon to enter command-line mode
+vim.keymap.set('n', ';', ':', { noremap = true })
+
+vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
+-- allow moving selected lines up and down thile holding shift with movement keys.
+vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
+vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
+vim.keymap.set('v', '<S-Down>', ":m '>+1<CR>gv=gv")
+vim.keymap.set('v', '<S-Up>', ":m '<-2<CR>gv=gv")
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -146,7 +165,7 @@ vim.opt.inccommand = 'split'
 vim.opt.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.opt.scrolloff = 10
+vim.opt.scrolloff = 5
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -183,7 +202,6 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
-
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
 --  See `:help vim.highlight.on_yank()`
@@ -193,6 +211,42 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.highlight.on_yank()
   end,
 })
+-- Function to open all files in a directory as buffers
+function openFilesInDirectory()
+  -- Store current cursor position
+  local previous_pos = vim.fn.getcurpos()
+  -- Store current buffer number
+  local previous_bufr = vim.fn.expand '%'
+  local cur_dir = vim.fn.execute 'pwd' .. '/'
+  -- Prompt the user for the directory path
+
+  local directory = vim.fn.input('diroctory to buffer: ' .. cur_dir)
+
+  -- directory = cur_dir .. directory
+  -- Get a list of files in the directory
+  local files = vim.fn.systemlist('find ' .. directory .. ' -type f')
+  --
+  --    -- Open each file as a buffer
+
+  print(directory)
+  for _, file in ipairs(files) do
+    print(file)
+    vim.cmd('edit ' .. vim.fn.fnameescape(file))
+  end
+  --
+  --
+  vim.cmd 'NvimTreeClose'
+  -- for key, value in pairs(require('nvim-tree.api').tree) do
+  --   print(key, value)
+  -- end
+  -- Switch back to the previous buffer
+  vim.cmd('buffer ' .. previous_bufr)
+  --    -- Restore cursor position
+  vim.fn.setpos('.', previous_pos)
+end
+
+-- Map a command to open files in a directory
+vim.api.nvim_set_keymap('n', '<Leader>o', ':lua openFilesInDirectory()<CR>', { noremap = true, silent = true })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
@@ -214,7 +268,7 @@ vim.opt.rtp:prepend(lazypath)
 --    :Lazy update
 --
 -- NOTE: Here is where you install your plugins.
-require('lazy').setup({
+require('lazy').setup {
 
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
@@ -287,6 +341,17 @@ require('lazy').setup({
   -- you do for a plugin at the top level, you can do for a dependency.
   --
   -- Use the `dependencies` key to specify the dependencies of a particular plugin
+  {
+    'ahmedkhalf/project.nvim',
+    config = function()
+      require('project_nvim').setup {
+        -- your configuration comes here
+        -- or leave it empty to use the default settings
+        -- refer to the configuration section below
+        require('telescope').load_extension 'projects',
+      }
+    end,
+  },
 
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
@@ -308,12 +373,14 @@ require('lazy').setup({
         end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
+      { 'nvim-telescope/telescope-file-browser.nvim' },
 
       -- Useful for getting pretty icons, but requires special font.
       --  If you already have a Nerd Font, or terminal set up with fallback fonts
       --  you can enable this
       -- { 'nvim-tree/nvim-web-devicons' }
     },
+
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
       -- it can fuzzy find! It's more than just a "file finder", it can search
@@ -336,6 +403,7 @@ require('lazy').setup({
 
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
+
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
@@ -528,10 +596,8 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
+        clangd = {},
+        rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -541,29 +607,29 @@ require('lazy').setup({
         -- tsserver = {},
         --
 
-        lua_ls = {
-          -- cmd = {...},
-          -- filetypes { ...},
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              runtime = { version = 'LuaJIT' },
-              workspace = {
-                checkThirdParty = false,
-                -- Tells lua_ls where to find all the Lua files that you have loaded
-                -- for your neovim configuration.
-                library = {
-                  '${3rd}/luv/library',
-                  unpack(vim.api.nvim_get_runtime_file('', true)),
-                },
-                -- If lua_ls is really slow on your computer, you can try this instead:
-                -- library = { vim.env.VIMRUNTIME },
-              },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
+        --      lua_ls = {
+        --        -- cmd = {...},
+        --        -- filetypes { ...},
+        --        -- capabilities = {},
+        --        settings = {
+        --          Lua = {
+        --            runtime = { version = 'LuaJIT' },
+        --            workspace = {
+        --              checkThirdParty = false,
+        --              -- Tells lua_ls where to find all the Lua files that you have loaded
+        --              -- for your neovim configuration.
+        --              library = {
+        --                '${3rd}/luv/library',
+        --                unpack(vim.api.nvim_get_runtime_file('', true)),
+        --              },
+        --              -- If lua_ls is really slow on your computer, you can try this instead:
+        --              -- library = { vim.env.VIMRUNTIME },
+        --            },
+        --            -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+        --            -- diagnostics = { disable = { 'missing-fields' } },
+        --          },
+        --        },
+        --      },
       }
 
       -- Ensure the servers and tools above are installed
@@ -611,6 +677,7 @@ require('lazy').setup({
       },
       formatters_by_ft = {
         lua = { 'stylua' },
+        cpp = { 'clangd' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -679,7 +746,7 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<Tab>'] = cmp.mapping.confirm { select = true },
 
           -- Manually trigger a completion from nvim-cmp.
           --  Generally you don't need this, because nvim-cmp will display
@@ -733,7 +800,23 @@ require('lazy').setup({
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  { 'rcarriga/nvim-dap-ui', dependencies = { 'mfussenegger/nvim-dap', 'nvim-neotest/nvim-nio' } },
+  -- file tree
+  {
+    'nvim-tree/nvim-tree.lua',
+    version = '*',
+    lazy = false,
+    dependencies = {
+      'nvim-tree/nvim-web-devicons',
+    },
+    config = function()
+      require('nvim-tree').setup {
 
+        -- <space>n to toggle file tree
+        vim.keymap.set('n', '<leader>n', require('nvim-tree.api').tree.toggle),
+      }
+    end,
+  },
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
@@ -785,6 +868,7 @@ require('lazy').setup({
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
+  { 'bluz71/vim-moonfly-colors', name = 'moonfly', lazy = false, priority = 1000 },
 
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
@@ -804,7 +888,7 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information see: :help lazy.nvim-lazy.nvim-structuring-your-plugins
   -- { import = 'custom.plugins' },
-}, {})
-
+}
+vim.cmd 'colorscheme moonfly'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
