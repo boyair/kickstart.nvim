@@ -82,7 +82,7 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
-require("personal")
+require 'personal'
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -520,6 +520,14 @@ require('lazy').setup {
       local servers = {
         clangd = {},
         rust_analyzer = {},
+        zls = {
+          settings = {
+            zls = {
+              enable_inlay_hints = true,
+              formatting = false, -- This disables zls formatting
+            },
+          },
+        },
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -589,26 +597,27 @@ require('lazy').setup {
     end,
   },
 
-  { -- Autoformat
-    'stevearc/conform.nvim',
-    opts = {
-      notify_on_error = false,
-      format_on_save = {
-        timeout_ms = 500,
-        lsp_fallback = true,
-      },
-      formatters_by_ft = {
-        lua = { 'stylua' },
-        cpp = { 'clangd' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use a sub-list to tell conform to run *until* a formatter
-        -- is found.
-        -- javascript = { { "prettierd", "prettier" } },
-      },
-    },
-  },
+  --  { -- Autoformat
+  --    'stevearc/conform.nvim',
+  --    opts = {
+  --      notify_on_error = false,
+  --      format_on_save = {
+  --        enabled = false,
+  --        timeout_ms = 500,
+  --        lsp_fallback = true,
+  --      },
+  --      formatters_by_ft = {
+  --        lua = { 'stylua' },
+  --        cpp = { 'clangd' },
+  --        -- Conform can also run multiple formatters sequentially
+  --        -- python = { "isort", "black" },
+  --        --
+  --        -- You can use a sub-list to tell conform to run *until* a formatter
+  --        -- is found.
+  --        -- javascript = { { "prettierd", "prettier" } },
+  --      },
+  --    },
+  --  },
 
   { -- Autocompletion
     'hrsh7th/nvim-cmp',
